@@ -19,9 +19,9 @@ public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
-    @Column(nullable=false, length=120)
+    @Column(nullable=false, length=120, unique=true)
     private String nombre;
 
     @Column(nullable=false, length=255)

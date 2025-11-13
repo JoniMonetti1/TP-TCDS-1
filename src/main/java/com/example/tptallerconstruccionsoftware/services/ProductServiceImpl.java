@@ -1,17 +1,21 @@
 package com.example.tptallerconstruccionsoftware.services;
 
+import com.example.tptallerconstruccionsoftware.dto.ProductRequest;
+import com.example.tptallerconstruccionsoftware.dto.ProductResponse;
+import com.example.tptallerconstruccionsoftware.exceptions.ProductAlreadyExistsException;
+import com.example.tptallerconstruccionsoftware.exceptions.ProductNotFoundException;
 import com.example.tptallerconstruccionsoftware.models.Product;
 import com.example.tptallerconstruccionsoftware.repositories.ProductRepository;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 @Service
-public class ProductServiceImpl implements  ProductService {
+@Transactional(readOnly = true)
+public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
 
@@ -20,57 +24,63 @@ public class ProductServiceImpl implements  ProductService {
     }
 
     @Override
-    public ResponseEntity<List<Product>> getProducts() {
-        List<Product> products = productRepository.findAll();
-        return products.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(products);
+    public Page<ProductResponse> getProducts(Pageable pageable) {
+        return productRepository.findAll(pageable).map(ProductResponse::fromEntity);
     }
 
     @Override
-    public ResponseEntity<Product> getProductById(Long id) {
-        Optional<Product> optionalProduct = productRepository.findById(id);
-        return optionalProduct.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+    public ProductResponse getProductById(Long id) {
+        return ProductResponse.fromEntity(findByIdOrThrow(id));
     }
 
     @Override
-    public ResponseEntity<List<Product>> getProductByName(String name) {
-        var listOfProducts = productRepository.findByNombreIgnoreCaseContaining(name);
-        return listOfProducts.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(listOfProducts);
+    public List<ProductResponse> getProductsByName(String name) {
+        return productRepository.findByNombreIgnoreCaseContaining(name)
+                .stream()
+                .map(ProductResponse::fromEntity)
+                .toList();
     }
 
     @Override
-    public ResponseEntity<Product> createProduct(Product product) {
-        if (product != null) {
-            var savedProduct = productRepository.save(product);
-
-            URI location = ServletUriComponentsBuilder
-                    .fromCurrentRequest()
-                    .path("/{id}")
-                    .buildAndExpand(product.getId())
-                    .toUri();
-            return ResponseEntity.created(location).body(savedProduct);
+    @Transactional
+    public ProductResponse createProduct(ProductRequest request) {
+        if (productRepository.existsByNombreIgnoreCase(request.nombre())) {
+            throw new ProductAlreadyExistsException(request.nombre());
         }
-        return ResponseEntity.badRequest().build();
+
+        Product product = new Product();
+        product.setNombre(request.nombre());
+        product.setDescripcion(request.descripcion());
+        product.setPrecio(request.precio());
+
+        return ProductResponse.fromEntity(productRepository.save(product));
     }
 
     @Override
-    public ResponseEntity<Product> updateProduct(Long id, Product product) {
-        var productToUpdate = productRepository.findById(id);
+    @Transactional
+    public ProductResponse updateProduct(Long id, ProductRequest request) {
+        Product product = findByIdOrThrow(id);
 
-        if (productToUpdate.isPresent()) {
-            product.setId(id);
-            var updatedProductLoaded = productRepository.save(product);
-            return ResponseEntity.ok(updatedProductLoaded);
+        if (productRepository.existsByNombreIgnoreCaseAndIdNot(request.nombre(), id)) {
+            throw new ProductAlreadyExistsException(request.nombre());
         }
-        return ResponseEntity.notFound().build();
+
+        product.setNombre(request.nombre());
+        product.setDescripcion(request.descripcion());
+        product.setPrecio(request.precio());
+
+        return ProductResponse.fromEntity(productRepository.save(product));
     }
 
     @Override
-    public ResponseEntity<?> deleteProduct(Long id) {
-        var optionalProduct = productRepository.findById(id);
-        if (optionalProduct.isPresent()) {
-            productRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+    @Transactional
+    public void deleteProduct(Long id) {
+        Product product = findByIdOrThrow(id);
+        productRepository.delete(product);
+    }
+
+    private Product findByIdOrThrow(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
     }
 }

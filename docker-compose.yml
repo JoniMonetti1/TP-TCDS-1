@@ -1,10 +1,7 @@
-version: '3.8'
-
 services:
   # Servicio de MySQL
   mysql-db:
     image: mysql:8.0
-    container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: demo_jpa
@@ -27,7 +24,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: spring-app
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -47,4 +43,3 @@ networks:
 
 volumes:
   mysql-data:
-

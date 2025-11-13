@@ -4,12 +4,12 @@
 
 ### Iniciar el proyecto
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ### Iniciar en segundo plano
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Detener los contenedores
@@ -17,17 +17,17 @@ docker-compose up -d
 # Presiona Ctrl + C en la terminal si está ejecutándose en primer plano
 
 # O usa este comando:
-docker-compose stop
+docker compose stop
 ```
 
 ### Detener y eliminar los contenedores
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### Detener y eliminar contenedores + volúmenes (BORRA LA BASE DE DATOS)
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ## 📊 Comandos de Monitoreo
@@ -44,17 +44,17 @@ docker ps -a
 
 ### Ver los logs de la aplicación
 ```bash
-docker-compose logs spring-app
+docker compose logs spring-app
 ```
 
 ### Ver los logs de MySQL
 ```bash
-docker-compose logs mysql-db
+docker compose logs mysql-db
 ```
 
 ### Ver los logs en tiempo real (seguir los logs)
 ```bash
-docker-compose logs -f spring-app
+docker compose logs -f spring-app
 ```
 
 
@@ -62,7 +62,7 @@ docker-compose logs -f spring-app
 
 ### Reconstruir la aplicación después de cambios en el código
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ### Entrar a la terminal del contenedor de MySQL
@@ -100,8 +100,8 @@ docker system prune -a --volumes
 
 ### Reiniciar completamente el proyecto
 ```bash
-docker-compose down
-docker-compose up --build
+docker compose down
+docker compose up --build
 ```
 
 ### Ver información detallada de un contenedor
@@ -141,7 +141,7 @@ Invoke-WebRequest -Uri "http://localhost:8080/system/api/v1/products" -Method PO
 
 - Siempre asegúrate de que Docker Desktop esté ejecutándose antes de usar estos comandos
 - Los comandos con `-f` (follow) se quedan mostrando logs continuamente, presiona Ctrl + C para salir
-- Los volúmenes mantienen los datos entre reinicios, a menos que uses `docker-compose down -v`
+- Los volúmenes mantienen los datos entre reinicios, a menos que uses `docker compose down -v`
 - Si cambias el código Java, necesitas reconstruir con `--build`
 
 ## 🆘 Comandos de Emergencia
@@ -150,7 +150,7 @@ Invoke-WebRequest -Uri "http://localhost:8080/system/api/v1/products" -Method PO
 
 1. **Detener todo**
 ```bash
-docker-compose down
+docker compose down
 ```
 
 2. **Limpiar**
@@ -160,13 +160,13 @@ docker system prune -f
 
 3. **Reconstruir desde cero**
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 4. **Si aún no funciona, eliminar también los volúmenes**
 ```bash
-docker-compose down -v
-docker-compose up --build
+docker compose down -v
+docker compose up --build
 ```
 
 ---

@@ -21,46 +21,49 @@ Antes de ejecutar el proyecto, necesitas tener instalado en tu computadora:
 - **Base de datos MySQL**: Almacenamiento de información
 - **Docker**: Contenedores para ejecutar todo de forma aislada y sencilla
 
+## 🧱 Arquitectura y buenas prácticas implementadas
+
+- **DTOs y validaciones**: La API recibe `ProductRequest` con anotaciones de Bean Validation (`@NotBlank`, `@DecimalMin`, etc.) y responde con `ProductResponse`, evitando exponer entidades JPA.
+- **Servicios desacoplados del transporte**: La capa de servicio ya no devuelve `ResponseEntity`; en su lugar maneja reglas de negocio y lanza excepciones tipadas que el controlador transforma en HTTP.
+- **Reglas de negocio explícitas**: El nombre del producto es único tanto a nivel de base como de aplicación; los servicios verifican duplicados y devuelven `409 Conflict` cuando corresponde.
+- **Transacciones acotadas**: Las operaciones de escritura utilizan `@Transactional` para garantizar consistencia.
+- **Documentación y tooling actualizados**: Se añadió `spring-boot-starter-validation`, se actualizaron los comandos a `docker compose` y se describieron escenarios de ejecución local y dockerizada.
+
 ## 🛠️ Cómo ejecutar el proyecto
 
-### Paso 1: Obtener el código
+Puedes levantar la app de dos maneras según lo que necesites probar.
 
-Si tienes Git instalado:
-```bash
-git clone <url-del-repositorio>
-cd TpTallerConstruccionSoftware
-```
+### Opción A: Entorno local con Maven (sin Docker)
 
-O simplemente asegúrate de estar en la carpeta del proyecto.
-
-### Paso 2: Iniciar Docker Desktop
-
-1. Abre Docker Desktop
-2. Espera a que esté completamente iniciado (el ícono dejará de estar en color naranja)
-
-### Paso 3: Construir y ejecutar los contenedores
-
-Abre una terminal (PowerShell o CMD) en la carpeta del proyecto y ejecuta:
+1. Asegúrate de tener JDK 17 instalado y con `JAVA_HOME` configurado.
+2. Desde la raíz del proyecto ejecuta:
 
 ```bash
-docker-compose up --build
+./mvnw clean spring-boot:run
 ```
 
-**¿Qué hace este comando?**
-- Descarga las imágenes necesarias (MySQL y Java)
-- Construye la aplicación
-- Crea dos contenedores: uno para MySQL y otro para la aplicación
-- Los inicia automáticamente
+La aplicación quedará disponible en `http://localhost:8080/system/api/v1`. Si el puerto está ocupado, puedes cambiarlo en caliente con:
 
-**Espera a ver estos mensajes:**
-- `Started TpTallerConstruccionSoftwareApplication` - La aplicación está lista
-- El proceso puede tardar 2-5 minutos la primera vez
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
+```
 
-### Paso 4: Verificar que funciona
+Detén la ejecución con `Ctrl + C`.
 
-Una vez que los contenedores estén ejecutándose, abre tu navegador o una herramienta como Postman y prueba:
+### Opción B: Stack completo con Docker Compose
 
-**URL base de la API:**
+1. Clona el repositorio (o descarga el ZIP) y entra en la carpeta del proyecto.
+2. Inicia Docker Desktop y espera a que quede listo.
+3. Construye y levanta toda la solución:
+
+```bash
+docker compose up --build
+```
+
+El comando descarga las imágenes necesarias, construye el JAR y crea dos contenedores (MySQL + aplicación). La primera ejecución puede tardar unos minutos.
+
+Cuando veas `Started TpTallerConstruccionSoftwareApplication`, la API estará disponible en:
+
 ```
 http://localhost:8080/system/api/v1/products
 ```
@@ -95,6 +98,24 @@ http://localhost:8080/system/api/v1/products
 
 Simplemente haz una petición GET a esta URL.
 
+## ✅ Validaciones y manejo de errores
+
+- Todos los cuerpos de entrada pasan por `ProductRequest` y Bean Validation. Si un campo es inválido se responde con `400 Bad Request` y el detalle del error.
+- Cuando se intenta consultar un recurso inexistente, se responde con `404 Not Found`.
+- Crear o actualizar un producto con un nombre ya registrado responde `409 Conflict`.
+
+Ejemplo de error de validación:
+
+```json
+{
+  "timestamp": "2025-11-13T15:00:21.123+00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "El nombre es obligatorio",
+  "path": "/system/api/v1/products"
+}
+```
+
 ## 📊 Configuración de la Base de Datos
 
 El proyecto está configurado con las siguientes credenciales de MySQL:
@@ -109,17 +130,17 @@ Si necesitas acceder directamente a MySQL, puedes usar cualquier cliente de MySQ
 
 ## ⏹️ Detener la aplicación
 
-Para detener los contenedores, presiona `Ctrl + C` en la terminal donde ejecutaste docker-compose.
+Para detener los contenedores, presiona `Ctrl + C` en la terminal donde ejecutaste docker compose.
 
 Si quieres detener y eliminar los contenedores completamente:
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 **Para eliminar también los datos de la base de datos:**
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ## 🔄 Reiniciar la aplicación
@@ -127,7 +148,7 @@ docker-compose down -v
 Si ya ejecutaste el proyecto anteriormente y quieres iniciarlo de nuevo:
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 (Sin el `--build` si no has hecho cambios en el código)
@@ -144,6 +165,16 @@ docker-compose up
 
 **Solución:** Detén la otra aplicación o cambia el puerto en el archivo `docker-compose.yml` (ejemplo: `"8081:8080"`).
 
+### Error: "Conflict. The container name \"/mysql-db\" is already in use"
+**Problema:** Quedó un contenedor antiguo con el mismo nombre.
+
+**Solución:** Elimina el contenedor huérfano y vuelve a levantar el stack:
+
+```bash
+docker rm -f mysql-db
+docker compose up --build
+```
+
 ### La aplicación no inicia
 **Solución:**
 1. Verifica que Docker Desktop esté ejecutándose
@@ -159,8 +190,8 @@ docker-compose up
 ## 📝 Notas adicionales
 
 - Los datos de la base de datos se mantienen entre reinicios gracias a los volúmenes de Docker
-- La aplicación se reconstruye automáticamente si cambias el código (requiere reiniciar con `docker-compose up --build`)
-- Puedes ver los logs de cada contenedor con: `docker-compose logs <nombre-servicio>`
+- La aplicación se reconstruye automáticamente si cambias el código (requiere reiniciar con `docker compose up --build`)
+- Puedes ver los logs de cada contenedor con: `docker compose logs <nombre-servicio>`
 
 
 ## 🛠️ Stack Tecnológico
@@ -174,5 +205,3 @@ docker-compose up
 - **Lombok**
 
 ---
-
-
