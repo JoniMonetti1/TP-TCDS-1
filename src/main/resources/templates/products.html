@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Gestión de Productos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link rel="stylesheet" th:href="@{/css/products.css}"/>
+</head>
+<body th:attr="data-context-path=${@environment.getProperty('server.servlet.context-path','')}">
+<header class="app-header">
+    <div>
+        <p class="eyebrow">TP Taller de Construcción de Software</p>
+        <h1>Panel de productos</h1>
+        <p class="subtitle">Consulta, crea, edita o elimina productos utilizando el backend existente.</p>
+    </div>
+    <button id="create-btn" class="primary-btn">
+        <span>+ Nuevo producto</span>
+    </button>
+</header>
+
+<main class="layout">
+    <section class="card controls">
+        <div class="field">
+            <label for="search-input">Buscar por nombre</label>
+            <div class="field-inline">
+                <input id="search-input" name="query" placeholder="Ej: Notebook" autocomplete="off"/>
+                <button id="search-btn" class="ghost-btn">Buscar</button>
+                <button id="reset-btn" class="ghost-btn muted">Limpiar</button>
+            </div>
+        </div>
+        <div id="status-message" class="status-label">Cargando productos…</div>
+    </section>
+
+    <section class="card table-wrapper">
+        <div class="table-header">
+            <h2>Inventario</h2>
+            <span class="badge" id="product-count">0 productos</span>
+        </div>
+        <div class="table-scroll">
+            <table id="products-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td colspan="5" class="empty-row">Sin datos disponibles</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<section class="modal" id="product-modal" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="product-form" class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <p class="eyebrow" id="modal-mode">Nuevo producto</p>
+                    <h3 id="modal-title">Crear producto</h3>
+                </div>
+                <button type="button" class="icon-btn" id="close-modal" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <label>
+                        Nombre
+                        <input name="nombre" id="nombre" placeholder="Nombre del producto" required maxlength="120"/>
+                    </label>
+                    <label>
+                        Precio
+                        <input name="precio" id="precio" placeholder="0.00" min="0" step="0.01" required type="number"/>
+                    </label>
+                </div>
+                <label>
+                    Descripción
+                    <textarea name="descripcion" id="descripcion" placeholder="Descripción breve" maxlength="255"
+                              required rows="3"></textarea>
+                </label>
+                <div id="form-error" class="form-error" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="ghost-btn muted" id="cancel-btn">Cancelar</button>
+                <button type="submit" class="primary-btn" id="submit-btn">Guardar</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script th:src="@{/js/products.js}"></script>
+</body>
+</html>
